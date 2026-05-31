@@ -6,13 +6,16 @@
   "dependencies": {
     "@effect/platform-bun": "4.0.0-beta.74",
     "@effect/platform-node": "4.0.0-beta.74",
+    "@effect/sql-pg": "4.0.0-beta.74",
     "alchemy": "https://pkg.ing/alchemy/cd9a3b0",
+    "drizzle-orm": "1.0.0-rc.3",
     "effect": "4.0.0-beta.74",
     "pg": "8.21.0"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/pg": "8.20.0"
+    "@types/pg": "8.20.0",
+    "drizzle-kit": "1.0.0-rc.3"
   },
   "peerDependencies": {
     "typescript": "^5"

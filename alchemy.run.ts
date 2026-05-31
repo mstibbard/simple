@@ -1,5 +1,6 @@
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Drizzle from "alchemy/Drizzle";
 import * as GitHub from "alchemy/GitHub";
 import * as Planetscale from "alchemy/Planetscale";
 import * as Output from "alchemy/Output";
@@ -14,6 +15,7 @@ export default Alchemy.Stack(
   {
     providers: Layer.mergeAll(
       Cloudflare.providers(),
+      Drizzle.providers(),
       GitHub.providers(),
       Planetscale.providers(),
     ),

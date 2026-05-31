@@ -1,13 +1,13 @@
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Drizzle from "alchemy/Drizzle";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Redacted from "effect/Redacted";
-import { Client } from "pg";
 import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import { Bucket } from "./bucket.ts";
 import Counter from "./counter.ts";
 import { Hyperdrive } from "./db.ts";
+import { relations } from "./schema.ts";
 import * as Stream from "effect/Stream";
 
 export default Cloudflare.Worker(
@@ -21,6 +21,7 @@ export default Cloudflare.Worker(
   Effect.gen(function* () {
     const bucket = yield* Cloudflare.R2Bucket.bind(Bucket);
     const hyperdrive = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
+    const db = yield* Drizzle.postgres(hyperdrive.connectionString, { relations });
     const counters = yield* Counter;
 
     return {
@@ -48,22 +49,11 @@ export default Cloudflare.Worker(
         }
 
         if (request.url === "/db" && request.method === "GET") {
-          const connectionString = Redacted.value(
-            yield* hyperdrive.connectionString,
-          );
-          const rows = yield* Effect.promise(async () => {
-            const client = new Client({ connectionString });
-            await client.connect();
-
-            try {
-              const result = await client.query("SELECT now() as now");
-              return result.rows;
-            } finally {
-              await client.end().catch(() => {});
-            }
+          const user = yield* db.query.Users.findFirst({
+            where: { id: 1 },
+            with: { posts: true },
           });
-
-          return yield* HttpServerResponse.json({ ok: true, rows });
+          return yield* HttpServerResponse.json({ user });
         }
 
         const key = request.url.split("/").pop()!;
@@ -87,14 +77,14 @@ export default Cloudflare.Worker(
         Effect.catchTag("R2Error", (error) =>
           Effect.succeed(HttpServerResponse.text(error.message, { status: 500 })),
         ),
+        Effect.catchCause((cause) =>
+          Effect.succeed(HttpServerResponse.text(String(cause), { status: 500 })),
+        ),
       ),
     };
   }).pipe(
     Effect.provide(
-      Layer.mergeAll(
-        Cloudflare.R2BucketBindingLive,
-        Cloudflare.HyperdriveBindingLive,
-      ),
+      Layer.mergeAll(Cloudflare.R2BucketBindingLive, Cloudflare.HyperdriveBindingLive),
     ),
   ),
 );
