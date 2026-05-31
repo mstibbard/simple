@@ -6,7 +6,7 @@
   "dependencies": {
     "@effect/platform-bun": "4.0.0-beta.74",
     "@effect/platform-node": "4.0.0-beta.74",
-    "alchemy": "2.0.0-beta.46",
+    "alchemy": "https://pkg.ing/alchemy/cd9a3b0",
     "effect": "4.0.0-beta.74"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@ import { Bucket } from "./src/bucket.ts";
 import Worker from "./src/worker.ts";
 
 export default Alchemy.Stack(
-  "MyApp",
+  "Simple",
   {
     providers: Cloudflare.providers(),
     state: Cloudflare.state(),
