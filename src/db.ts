@@ -1,18 +1,24 @@
+import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Drizzle from "alchemy/Drizzle";
 import * as Planetscale from "alchemy/Planetscale";
 import * as Effect from "effect/Effect";
 
 export const Db = Effect.gen(function* () {
+  const { stage } = yield* Alchemy.Stack;
+
   const schema = yield* Drizzle.Schema("app-schema", {
     schema: "./src/schema.ts",
     out: "./migrations",
   });
 
-  const database = yield* Planetscale.PostgresDatabase("app-db", {
-    region: { slug: "us-east" },
-    clusterSize: "PS_5",
-  });
+  const database =
+    stage.startsWith("pr-") || stage.startsWith("dev-")
+      ? yield* Planetscale.PostgresDatabase.ref("app-db", { stage: "staging" })
+      : yield* Planetscale.PostgresDatabase("app-db", {
+          region: { slug: "us-east" },
+          clusterSize: "PS_5",
+        });
 
   const branch = yield* Planetscale.PostgresBranch("app-branch", {
     database,
