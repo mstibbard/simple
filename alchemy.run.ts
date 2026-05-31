@@ -1,20 +1,28 @@
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as GitHub from "alchemy/GitHub";
+import * as Planetscale from "alchemy/Planetscale";
 import * as Output from "alchemy/Output";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import { Bucket } from "./src/bucket.ts";
+import { Db, Hyperdrive } from "./src/db.ts";
 import Worker from "./src/worker.ts";
 
 export default Alchemy.Stack(
   "Simple",
   {
-    providers: Layer.mergeAll(Cloudflare.providers(), GitHub.providers()),
+    providers: Layer.mergeAll(
+      Cloudflare.providers(),
+      GitHub.providers(),
+      Planetscale.providers(),
+    ),
     state: Cloudflare.state(),
   },
   Effect.gen(function* () {
     const bucket = yield* Bucket;
+    yield* Db;
+    yield* Hyperdrive;
     const worker = yield* Worker;
 
     if (process.env.PULL_REQUEST) {

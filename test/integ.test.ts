@@ -1,14 +1,16 @@
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as Planetscale from "alchemy/Planetscale";
 import * as Test from "alchemy/Test/Bun";
 import { expect } from "bun:test";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 import * as HttpBody from "effect/unstable/http/HttpBody";
 import * as Stream from "effect/Stream";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import Stack from "../alchemy.run.ts";
 
 const { test, beforeAll, afterAll, deploy, destroy } = Test.make({
-  providers: Cloudflare.providers(),
+  providers: Layer.mergeAll(Cloudflare.providers(), Planetscale.providers()),
   state: Cloudflare.state(),
 });
 
