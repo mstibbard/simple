@@ -1,0 +1,23 @@
+{
+  "name": "simple",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "alchemy": "alchemy",
+    "deploy": "alchemy deploy",
+    "plan": "alchemy plan"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@effect/platform-bun": ">=4.0.0-beta.66 || >=4.0.0",
+    "@effect/platform-node": ">=4.0.0-beta.66 || >=4.0.0",
+    "alchemy": "2.0.0-beta.40",
+    "effect": ">=4.0.0-beta.66 || >=4.0.0"
+  }
+}
