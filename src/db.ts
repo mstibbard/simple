@@ -3,6 +3,22 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import * as Drizzle from "alchemy/Drizzle";
 import * as Planetscale from "alchemy/Planetscale";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
+import * as Context from "effect/Context";
+import * as Layer from "effect/Layer";
+import { relations } from "./schema.ts";
+
+const make = (
+  connectionString: Effect.Effect<Redacted.Redacted<string>, never, Alchemy.RuntimeContext>,
+) => Drizzle.postgres(connectionString, { relations });
+
+type DatabaseShape = Effect.Success<ReturnType<typeof make>>;
+
+export class Database extends Context.Service<Database, DatabaseShape>()("Database") {
+  static Live = (
+    connectionString: Effect.Effect<Redacted.Redacted<string>, never, Alchemy.RuntimeContext>,
+  ) => Layer.effect(Database, make(connectionString));
+}
 
 export const Db = Effect.gen(function* () {
   const { stage } = yield* Alchemy.Stack;

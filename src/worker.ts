@@ -1,14 +1,13 @@
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Drizzle from "alchemy/Drizzle";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Stream from "effect/Stream";
 import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import { Bucket } from "./bucket.ts";
 import Counter from "./counter.ts";
-import { Hyperdrive } from "./db.ts";
-import { relations } from "./schema.ts";
-import * as Stream from "effect/Stream";
+import { Database, Hyperdrive } from "./db.ts";
+import { findUserWithPosts } from "./queries.ts";
 
 export default Cloudflare.Worker(
   "Worker",
@@ -21,7 +20,7 @@ export default Cloudflare.Worker(
   Effect.gen(function* () {
     const bucket = yield* Cloudflare.R2Bucket.bind(Bucket);
     const hyperdrive = yield* Cloudflare.Hyperdrive.bind(Hyperdrive);
-    const db = yield* Drizzle.postgres(hyperdrive.connectionString, { relations });
+    const databaseLive = Database.Live(hyperdrive.connectionString);
     const counters = yield* Counter;
 
     return {
@@ -49,10 +48,7 @@ export default Cloudflare.Worker(
         }
 
         if (request.url === "/db" && request.method === "GET") {
-          const user = yield* db.query.Users.findFirst({
-            where: { id: 1 },
-            with: { posts: true },
-          });
+          const user = yield* findUserWithPosts(1);
           return yield* HttpServerResponse.json({ user });
         }
 
@@ -74,6 +70,7 @@ export default Cloudflare.Worker(
 
         return HttpServerResponse.text(yield* object.text());
       }).pipe(
+        Effect.provide(databaseLive),
         Effect.catchTag("R2Error", (error) =>
           Effect.succeed(HttpServerResponse.text(error.message, { status: 500 })),
         ),
