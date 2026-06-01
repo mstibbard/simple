@@ -7,7 +7,7 @@
     "@effect/platform-bun": "4.0.0-beta.74",
     "@effect/platform-node": "4.0.0-beta.74",
     "@effect/sql-pg": "4.0.0-beta.74",
-    "alchemy": "https://pkg.ing/alchemy/cd9a3b0",
+    "alchemy": "2.0.0-beta.47",
     "drizzle-orm": "1.0.0-rc.3",
     "effect": "4.0.0-beta.74",
     "pg": "8.21.0"
