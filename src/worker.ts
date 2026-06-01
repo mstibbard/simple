@@ -1,13 +1,31 @@
+import type { HttpEffect as WorkerHttpEffect } from "alchemy/Http";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Stream from "effect/Stream";
-import { HttpServerRequest } from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import { HttpEffect, HttpRouter, HttpServerResponse } from "effect/unstable/http";
+import { HttpApiLive } from "./api.ts";
 import { Bucket } from "./bucket.ts";
 import Counter from "./counter.ts";
 import { Database, Hyperdrive } from "./db.ts";
-import { findUserWithPosts } from "./queries.ts";
+
+const internalServerError = (cause: unknown) =>
+  Effect.succeed(HttpServerResponse.text(String(cause), { status: 500 }));
+
+const toWorkerFetch = (
+  layer: Layer.Layer<unknown, never, HttpRouter.HttpRouter>,
+): WorkerHttpEffect => {
+  const { handler } = HttpRouter.toWebHandler(layer, {
+    disableLogger: true,
+  });
+
+  return Effect.contextWith((context) =>
+    HttpEffect.fromWebHandler((request) =>
+      handler(request, context as never),
+    ),
+  ).pipe(
+    Effect.catchCause(internalServerError),
+  ) as WorkerHttpEffect;
+};
 
 export default Cloudflare.Worker(
   "Worker",
@@ -24,59 +42,12 @@ export default Cloudflare.Worker(
     const counters = yield* Counter;
 
     return {
-      fetch: Effect.gen(function* () {
-        const request = yield* HttpServerRequest;
-
-        if (request.url.startsWith("/counter/") && request.method === "POST") {
-          const name = request.url.split("/").pop()!;
-          const next = yield* counters.getByName(name).increment();
-          return HttpServerResponse.text(String(next));
-        }
-
-        if (request.url.startsWith("/tick/") && request.method === "GET") {
-          const n = Number(request.url.split("/").pop()!);
-          const stream = counters
-            .getByName("tick")
-            .tick(n)
-            .pipe(
-              Stream.map((i) => `${i}\n`),
-              Stream.encodeText,
-            );
-          return HttpServerResponse.stream(stream, {
-            headers: { "content-type": "text/plain" },
-          });
-        }
-
-        if (request.url === "/db" && request.method === "GET") {
-          const user = yield* findUserWithPosts(1);
-          return yield* HttpServerResponse.json({ user });
-        }
-
-        const key = request.url.split("/").pop()!;
-
-        if (request.method === "PUT") {
-          yield* bucket.put(key, request.stream, {
-            contentLength: Number(request.headers["content-length"] ?? 0),
-          });
-
-          return HttpServerResponse.empty({ status: 201 });
-        }
-
-        const object = yield* bucket.get(key);
-
-        if (object === null) {
-          return HttpServerResponse.text("Not found", { status: 404 });
-        }
-
-        return HttpServerResponse.text(yield* object.text());
-      }).pipe(
-        Effect.provide(databaseLive),
-        Effect.catchTag("R2Error", (error) =>
-          Effect.succeed(HttpServerResponse.text(error.message, { status: 500 })),
-        ),
-        Effect.catchCause((cause) =>
-          Effect.succeed(HttpServerResponse.text(String(cause), { status: 500 })),
-        ),
+      fetch: toWorkerFetch(
+        HttpApiLive({
+          bucket,
+          counters,
+          database: databaseLive,
+        }) as Layer.Layer<unknown, never, HttpRouter.HttpRouter>,
       ),
     };
   }).pipe(
