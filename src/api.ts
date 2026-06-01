@@ -140,9 +140,8 @@ export const HttpApiLive = ({
     HttpApiBuilder.layer(AppApi).pipe(
       Layer.provide(HttpServer.layerServices),
       Layer.provide(
-        Layer.mergeAll(
-          AppHandlersLive(bucket, counters),
-          database,
+        AppHandlersLive(bucket, counters).pipe(
+          Layer.provide(database),
         ),
       ),
     ),
