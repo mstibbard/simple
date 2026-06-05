@@ -4,12 +4,12 @@
   "type": "module",
   "module": "index.ts",
   "dependencies": {
-    "@effect/platform-bun": "4.0.0-beta.74",
-    "@effect/platform-node": "4.0.0-beta.74",
-    "@effect/sql-pg": "4.0.0-beta.74",
-    "alchemy": "2.0.0-beta.47",
+    "@effect/platform-bun": "4.0.0-beta.78",
+    "@effect/platform-node": "4.0.0-beta.78",
+    "@effect/sql-pg": "4.0.0-beta.78",
+    "alchemy": "2.0.0-beta.51",
     "drizzle-orm": "1.0.0-rc.3",
-    "effect": "4.0.0-beta.74",
+    "effect": "4.0.0-beta.78",
     "pg": "8.21.0"
   },
   "devDependencies": {
